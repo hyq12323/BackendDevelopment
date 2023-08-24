@@ -1701,4 +1701,130 @@ Redis客户端可以订阅任何数量的频道。
 
 > 命令
 
-这些命令被广泛用于构建即时
+这些命令被广泛用于构建即时通信应用，比如网络聊天室和实时广播、实时提醒等。
+
+![41](/img/41.jpg)
+
+> 测试
+
+订阅端：
+
+``` bash
+127.0.0.1:6379> SUBSCRIBE hyq		# 订阅一个频道
+Reading messages... (press Ctrl-C to quit)
+1) "subscribe"
+2) "hyq"
+3) (integer) 1
+# 等待读取推送的信息
+1) "message"	# 消息
+2) "hyq"		# 频道
+3) "iloveyou"	# 具体的消息
+1) "message"
+2) "hyq"
+3) "helloRedis"
+```
+
+发送端：
+
+``` bash
+127.0.0.1:6379> PUBLISH hyq iloveyou			# 发送者发布消息到频道！
+(integer) 1
+127.0.0.1:6379> PUBLISH hyq helloRedis
+(integer) 1
+```
+
+> 原理
+
+Redis是使用C实现的，通过分析 Redis 源码里的 pubsub.c 文件，了解发布和订阅机制的底层实现，籍此加深对 Redis 的理解。
+
+Redis 通过 PUBLISH、SUBSCRIBE 和 PSUBSCRIBE 等命令实现发布和订阅功能。
+
+通过 SUBSCRIBE 命令订阅某频道后，redis-server 里维护了一个字典，字典的键就是一个个频道（channel）,而字典的值则是一个链表，链表中保存了所有订阅这 channel的客户端。SUBSCRIBE 命令的关键，就是将客户端添加到给定 channel 的订阅链表中。
+
+![42](img/42.jpg)
+
+通过 PUBLISH 命令向订阅者发送消息，redis-server 会使用给定的频道作为键，在它所维护的 channel 字典中查找记录了订阅个频道的所有客户端的链表，遍历这个链表，将消息发布给所有订阅者。
+
+Pub/Sub 从字面上理解就是发布 ( Publish ) 与订阅( Subscribe )，在Redis中，你可以设定对某一个key值进行消息发布及消息订阅，当一个kev值上进行了消息发布后，所有订阅它的客户端都会收到相应的消息。这一功能最明显的用法就是用作实时消息系统，比如普通的即
+
+时聊天，群聊等功能。
+
+使用场景：
+
+1、实时消息系统！
+
+2、事实聊天！（频道当作聊天室，将信息回显给所有人即可）
+
+3、订阅、关注系统都是可以的！
+
+稍微复杂的场景我们就会使用消息中间件。
+
+## Redis主从复制
+
+### 概念
+
+主从复制，是指将一台Redis服务器的数据，复制到其他的Redis服务器。前者称为主节点(master/leader)，后者称为从节点(slave/follower)；<font color = red>数据的复制是单向的，只能由主节点到从节点。</font>Master以写为主，Slave 以读为主。
+
+<font color =red>默认情况下，每台Redis服务器都是主节点，</font>且一个主节点可以有多个从节点（或没有从节点），一个从节点只能有一个主节点。
+
+**主从复制的作用主要包括：**
+
+1、数据冗余：主从复制实现了数据的热备份，是持久化之外的一种数据冗余方式
+
+2、故障恢复：当主节点出现问题时，可以由从节点提供服务，实现快速的故障恢复；实际上是一种服务的冗余。
+
+3、负载均衡：在主从复制的基础上，配合读写分离，可以由主节点提供写服务，由从节点提供读服务（即写Redis数据时应用连接主节点，读Redis数据时应用连接从节点），分担服务器负载，尤其是在写少读多的场景下，通过多个从节点分担读负载，可以大大提高Redis服务器的并发量。
+
+4、高可用（集群）基石：除了上述作用以外，主从复制还是哨兵和集群能够实施的基础，因此说主从复制是Redis高可用的基础。
+
+一般来说，要将Redis运用于工程项目中，只使用一台Redis是万万不能的（宕机），原因如下：
+
+1、从结构上，单个Redis服务器会发生单点故障，并且一台服务器需要处理所有的请求负载，压力较大。
+
+2、从容量上，单个Redis服务器内存容量有限，就算一台Redis服务器内存容量为256G，也不能将所有内存用作Redis存储内存，一般来说，<font color = red>单台Redis最大使用内存不应该超过20G。</font>
+
+电商网站上的商品，一般都是一次上传，无数次浏览的，说专业点也就是”多读少写”
+
+对于这种场景，我们可以使用如下这种架构：
+
+![43](/img/43.jpg)
+
+主从复制，读写分离！80%的情况下都是在进行读操作！为了减缓服务器的压力！架构中经常使用！一主二从！
+
+### 环境配置
+
+只配置从库，不用配置主库！
+
+``` bash
+127.0.0.1:6379> info replication		# 查看当前库的信息
+# Replication
+role:master								# 角色
+connected_slaves:0						# 没有从机
+master_failover_state:no-failover
+master_replid:1a3742b284a61acba488a46425d8ccbd3c0d238c
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:0
+second_repl_offset:-1
+repl_backlog_active:0
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:0
+repl_backlog_histlen:0
+```
+
+复制3个配置文件，然后修改对应的信息
+
+1、端口
+
+2、pid 名字
+
+3、log文件名字
+
+4、dump.rdb 名字
+
+修改完毕之后，启动我们的3个redis服务器，可以通过进程信息查看！
+
+![44](/img/44.jpg)
+
+### 一主二从
+
+<font color =red>默认情况下，每台Redis服务器都是主节点</font>
