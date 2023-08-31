@@ -1827,4 +1827,84 @@ repl_backlog_histlen:0
 
 ### 一主二从
 
-<font color =red>默认情况下，每台Redis服务器都是主节点</font>
+<font color =red>默认情况下，每台Redis服务器都是主节点；</font>我们一般情况下只用配置从机就好了！
+
+认老大！一主（79）二从（80，81）
+
+``` bash
+127.0.0.1:6380> slaveof 127.0.0.1 6379			# SLAVEOF host 6379	设置主机
+OK
+127.0.0.1:6380> info replication
+# Replication
+role:slave				# 当前角色是从机
+master_host:127.0.0.1	# 可以看到主机的信息
+master_port:6379
+master_link_status:up
+master_last_io_seconds_ago:2
+master_sync_in_progress:0
+slave_read_repl_offset:14
+slave_repl_offset:14
+slave_priority:100
+slave_read_only:1
+replica_announced:1
+connected_slaves:0
+master_failover_state:no-failover
+master_replid:4b6b5c9177fe079dfb9b135ed0a0ce78a76a1ae9
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:14
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:1
+repl_backlog_histlen:14
+
+# 在主机中查看
+127.0.0.1:6379> info replication
+# Replication
+role:master
+connected_slaves:1	# 多了从机的配置
+slave0:ip=127.0.0.1,port=6380,state=online,offset=56,lag=1	# 从机配置
+master_failover_state:no-failover
+master_replid:4b6b5c9177fe079dfb9b135ed0a0ce78a76a1ae9
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:56
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:1
+repl_backlog_histlen:56
+```
+
+如果两个都配置完了，就是有两个从机的信息
+
+![45](/img/45.jpg)
+
+真实的主从配置应该在配置文件中配置，这样的话是永久的，我们这里使用的是命令，暂时的！
+
+> 细节
+
+主机可以写，从机不能写只能读！主机中的所有信息和数据，都会自己被从机保存！
+
+主机写：
+
+![46](/img/46.jpg)
+
+从机只能读取内容！
+
+![47](/img/47.jpg)
+
+测试：主机断开连接，从机依旧连接到主机的，但是没有写操作，这个时候，主机如果回来了，从机依旧可以直接获取到主机写的信息！
+
+如果是使用命令行，来配置的主从，这个时候如果重启了，就会变成主机。只要变为从机，立马就会从主机中获取值！
+
+> 复制原理
+
+Slave 启动成功连接到 master 后会发送一个 sync 命令
+
+Master 接到命令，启动后台的存盘进程，同时收集所有接收到的用于修改数据集命令，在后台进程执行完毕之后，<font color = red>master将传送整个数据文件到slave，并完成一次完全同步。</font>
+
+<font color = red>全量复制</font>：而slave服务在接收到数据库文件数据后，将其存盘并加载到内存中。
+
+<font color = red>增量复制</font>：Master 继续将新的所有收集到的修改命令依次传给slave，完成同步。
+
+但是只要是重新连接master，一次完全同步（全量复制）将被自动执行！我们的数据一定可以在从机中看到！
