@@ -272,3 +272,285 @@ docker stop 容器id		# 停止当前正在运行的容器
 docker kill 容器id		# 强制停止当前容器
 ```
 
+### 常用其他命令
+
+**后台启动容器**
+
+``` shell
+# 命令 docker run -d 镜像名
+[root@localhost ~]# docker run -d centos
+
+# 问题docker ps，发现centos 停止了
+
+# 常见的坑：docker 容器使用后台运行，就必须要有一个前台进程，docker发现没有应用，就会自动停止
+# nginx，容器后，发现自己没有提供服务，就会立刻停止，就是没有程序了
+```
+
+**查看日志**
+
+``` shell
+docker logs -f -t --tail 容器ID
+
+[root@localhost ~]# docker run -d centos /bin/bash -c "while true;do echo hyq;sleep 1;done"
+
+[root@localhost ~]# docker ps
+CONTAINER ID   IMAGE     
+74769c92d123   centos   
+
+# 显示日志
+-tf 			# 显示全部日志
+--tail number   # 要显示日志条数
+[root@localhost ~]# docker logs -tf --tail 10 74769c92d123
+```
+
+**查看容器中进程信息**
+
+``` shell
+# 命令 docker top 容器ID
+[root@localhost ~]# docker top 74769c92d123
+UID                 PID                 PPID                C                   STIME               TTY     
+root                2810                2791                0                   01:19               ?       
+root                3205                2810                0                   01:24               ?       
+```
+
+**查看镜像原数据**
+
+``` shell
+# 命令
+docker inspect 容器ID
+
+# 测试
+[root@localhost ~]# docker inspect 74769c92d123
+[
+    {
+        "Id": "74769c92d12340c769ff39d75887fc5a6c5f2ec2402460ddd248cf297f31ff69",
+        "Created": "2023-11-16T09:19:55.794049885Z",
+        "Path": "/bin/bash",
+        "Args": [
+            "-c",
+            "while true;do echo hyq;sleep 1;done"
+        ],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 2810,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2023-11-16T09:19:55.968057166Z",
+            "FinishedAt": "0001-01-01T00:00:00Z"
+        },
+        "Image": "sha256:5d0da3dc976460b72c77d94c8a1ad043720b0416bfc16c52c45d4847e53fadb6",
+        "ResolvConfPath": "/var/lib/docker/containers/74769c92d12340c769ff39d75887fc5a6c5f2ec2402460ddd248cf297f31ff69/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/74769c92d12340c769ff39d75887fc5a6c5f2ec2402460ddd248cf297f31ff69/hostname",
+        "HostsPath": "/var/lib/docker/containers/74769c92d12340c769ff39d75887fc5a6c5f2ec2402460ddd248cf297f31ff69/hosts",
+        "LogPath": "/var/lib/docker/containers/74769c92d12340c769ff39d75887fc5a6c5f2ec2402460ddd248cf297f31ff69/74769c92d12340c769ff39d75887fc5a6c5f2ec2402460ddd248cf297f31ff69-json.log",
+        "Name": "/gallant_robinson",
+        "RestartCount": 0,
+        "Driver": "overlay2",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": null,
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {}
+            },
+            "NetworkMode": "default",
+            "PortBindings": {},
+            "RestartPolicy": {
+                "Name": "no",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                43,
+                186
+            ],
+            "CapAdd": null,
+            "CapDrop": null,
+            "CgroupnsMode": "host",
+            "Dns": [],
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": null,
+            "GroupAdd": null,
+            "IpcMode": "private",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": null,
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Runtime": "runc",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": [],
+            "BlkioDeviceReadBps": [],
+            "BlkioDeviceWriteBps": [],
+            "BlkioDeviceReadIOps": [],
+            "BlkioDeviceWriteIOps": [],
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": [],
+            "DeviceCgroupRules": null,
+            "DeviceRequests": null,
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": false,
+            "PidsLimit": null,
+            "Ulimits": null,
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/asound",
+                "/proc/acpi",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/sys/firmware",
+                "/sys/devices/virtual/powercap"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "GraphDriver": {
+            "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/3548eccddbeee5d4b488f99b69cc0fdbf5cf01abe65538ed8c02a944d601ac77-init/diff:/var/lib/docker/overlay2/9057e1cf774a1809e959f059f0c6b979366c7b70f80027eba7c13d700d77a0b2/diff",
+                "MergedDir": "/var/lib/docker/overlay2/3548eccddbeee5d4b488f99b69cc0fdbf5cf01abe65538ed8c02a944d601ac77/merged",
+                "UpperDir": "/var/lib/docker/overlay2/3548eccddbeee5d4b488f99b69cc0fdbf5cf01abe65538ed8c02a944d601ac77/diff",
+                "WorkDir": "/var/lib/docker/overlay2/3548eccddbeee5d4b488f99b69cc0fdbf5cf01abe65538ed8c02a944d601ac77/work"
+            },
+            "Name": "overlay2"
+        },
+        "Mounts": [],
+        "Config": {
+            "Hostname": "74769c92d123",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            ],
+            "Cmd": [
+                "/bin/bash",
+                "-c",
+                "while true;do echo hyq;sleep 1;done"
+            ],
+            "Image": "centos",
+            "Volumes": null,
+            "WorkingDir": "",
+            "Entrypoint": null,
+            "OnBuild": null,
+            "Labels": {
+                "org.label-schema.build-date": "20210915",
+                "org.label-schema.license": "GPLv2",
+                "org.label-schema.name": "CentOS Base Image",
+                "org.label-schema.schema-version": "1.0",
+                "org.label-schema.vendor": "CentOS"
+            }
+        },
+        "NetworkSettings": {
+            "Bridge": "",
+            "SandboxID": "c99bd0c86d0a707b3c1b49e8a1c29edab8049add184104f35d6c5707071c75e7",
+            "HairpinMode": false,
+            "LinkLocalIPv6Address": "",
+            "LinkLocalIPv6PrefixLen": 0,
+            "Ports": {},
+            "SandboxKey": "/var/run/docker/netns/c99bd0c86d0a",
+            "SecondaryIPAddresses": null,
+            "SecondaryIPv6Addresses": null,
+            "EndpointID": "a43796aeb30af5086440f5fab703eaaaaf0dff46f9117c78c5403cc3adbc9154",
+            "Gateway": "172.17.0.1",
+            "GlobalIPv6Address": "",
+            "GlobalIPv6PrefixLen": 0,
+            "IPAddress": "172.17.0.2",
+            "IPPrefixLen": 16,
+            "IPv6Gateway": "",
+            "MacAddress": "02:42:ac:11:00:02",
+            "Networks": {
+                "bridge": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": null,
+                    "NetworkID": "6da1d463248ba5ee3544b40e52a0d3e4c30ad12f1bdfbadab4e42d264b6961a0",
+                    "EndpointID": "a43796aeb30af5086440f5fab703eaaaaf0dff46f9117c78c5403cc3adbc9154",
+                    "Gateway": "172.17.0.1",
+                    "IPAddress": "172.17.0.2",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "MacAddress": "02:42:ac:11:00:02",
+                    "DriverOpts": null
+                }
+            }
+        }
+    }
+]
+```
+
+**进入当前正在运行的容器**
+
+``` shell
+# 我们通常容器都是使用后台方式运行的，需要进入容器，修改一些配置
+
+# 命令1
+docker exec -it 容器ID bashShell
+
+# 测试
+[root@localhost ~]# docker exec -it 74769c92d123 /bin/bash
+[root@74769c92d123 /]# ls
+bin  dev  etc  home  lib  lib64  lost+found  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var
+
+# 命令2
+docker attach 容器ID
+
+# 测试
+[root@localhost ~]# docker attach 74769c92d123
+正在执行当前的代码...
+
+
+# docker exec		# 进入容器后开启一个新的终端，可以在里面操作（常用）
+# docker attach		# 进入容器正在执行的终端，不会启动新的进程！
+```
+
